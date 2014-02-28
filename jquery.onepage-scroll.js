@@ -96,7 +96,9 @@
     };
 
     $.fn.transformPage = function(settings, pos, index) {
-      if (typeof settings.beforeMove == 'function') settings.beforeMove(index);
+      if (typeof settings.beforeMove == 'function')
+        settings.beforeMove(index);
+      
       $(this).css({
         "-webkit-transform": "translate3d(0, " + pos + "%, 0)", 
         "-webkit-transition": "all " + settings.animationTime + "ms " + settings.easing,
@@ -107,6 +109,7 @@
         "transform": "translate3d(0, " + pos + "%, 0)", 
         "transition": "all " + settings.animationTime + "ms " + settings.easing
       });
+      
       $(this).one('webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend', function(e) {
         if (typeof settings.afterMove == 'function') settings.afterMove(index);
       });
@@ -131,7 +134,9 @@
         pos = (index * 100) * -1;
       }
 
-      if (typeof settings.beforeMove == 'function') settings.beforeMove( next.data("index"));
+      if (typeof settings.beforeMove == 'function')
+        settings.beforeMove( next.data("index"));
+      
       current.removeClass("active")
       next.addClass("active");
 
@@ -144,7 +149,15 @@
       $("body").addClass("viewing-page-"+next.data("index"))
       
       if (history.replaceState && settings.updateURL == true) {
-        var href = window.location.href.substr(0,window.location.href.indexOf('#')) + "#" + (index + 1);
+        var pageNumber = index;
+        var nextPage = 0;
+        // Avoid overflows, when looping by hitting bottom.
+        if (pageNumber === sections.length)
+          nextPage = 1;
+        else
+          nextPage = pageNumber + 1;
+        var href = window.location.href.replace(/#(\d+)/, "") + "#" + nextPage;
+        console.log(href, pageNumber, sections.length, nextPage);
         history.pushState( {}, document.title, href );
       }
 
@@ -169,18 +182,30 @@
       else {
         pos = ((next.data("index") - 1) * 100) * -1;
       }
-      if (typeof settings.beforeMove === 'function') settings.beforeMove(next.data("index"));
-      current.removeClass("active")
-      next.addClass("active")
+      
+      if (typeof settings.beforeMove === 'function')
+        settings.beforeMove(next.data("index"));
+      
+      current.removeClass("active");
+      next.addClass("active");
+      
       if(settings.pagination == true) {
         $(".onepage-pagination li a" + "[data-index='" + index + "']").removeClass("active");
         $(".onepage-pagination li a" + "[data-index='" + next.data("index") + "']").addClass("active");
       }
+      
       $("body")[0].className = $("body")[0].className.replace(/\bviewing-page-\d.*?\b/g, '');
-      $("body").addClass("viewing-page-"+next.data("index"))
+      $("body").addClass("viewing-page-"+next.data("index"));
       
       if (history.replaceState && settings.updateURL == true) {
-        var href = window.location.href.substr(0,window.location.href.indexOf('#')) + "#" + (index - 1);
+        var pageNumber = index;
+        var nextPage = 0;
+        // Avoid overflows, when looping by hitting ceiling.
+        if (pageNumber === 1)
+          nextPage = sections.length;
+        else
+          nextPage = pageNumber - 1;
+        var href = window.location.href.replace(/#(\-?\d+)/, "") + "#" + nextPage;
         history.pushState( {}, document.title, href );
       }
       el.transformPage(settings, pos, next.data("index"));
@@ -213,7 +238,7 @@
     // Listen for hashchange event, and move to the correct page when triggered.
 
     $(window).on("hashchange", function() {
-      el.moveTo(document.location.hash.replace(/\#/, ""));
+      el.moveTo(document.location.hash.replace(/#/, ""));
     });
 
     function responsive() {
@@ -221,7 +246,8 @@
         $("body").addClass("disabled-onepage-scroll");
         $(document).unbind('mousewheel DOMMouseScroll');
         el.swipeEvents().unbind("swipeDown swipeUp");
-      } else {
+      }
+      else {
         if($("body").hasClass("disabled-onepage-scroll")) {
           $("body").removeClass("disabled-onepage-scroll");
           $("html, body, .wrapper").animate({ scrollTop: 0 }, "fast");
@@ -268,16 +294,19 @@
     * Add the data-index attribute to them.
     */
     
-    el.addClass("onepage-wrapper").css("position","relative");
+    el.addClass("onepage-wrapper").css("position", "relative");
+    
     $.each( sections, function(i) {
       var index = i + 1;
+      
       $(this).css({
         position: "absolute",
         top: topPos + "%"
       }).addClass("section").attr("data-index", index);
+      
       topPos = topPos + 100;
       if(settings.pagination == true) {
-        paginationList += "<li><a data-index='"+(index)+"' href='#" + (index) + "'></a></li>"
+        paginationList += "<li><a data-index='" + (index) + "' href='#" + (index) + "'></a></li>"
       }
     });
     
@@ -337,6 +366,7 @@
       $("body").addClass("viewing-page-1")
       if(settings.pagination == true) $(".onepage-pagination li a" + "[data-index='1']").addClass("active");
     }
+    
     if(settings.pagination == true) {
       $(".onepage-pagination li a").click(function (){
         var page_index = $(this).data("index");
