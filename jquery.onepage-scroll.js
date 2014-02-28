@@ -27,7 +27,7 @@
     afterMove: null,
     loop: false,
     responsiveFallback: false
-	};
+  };
 	
 	/*------------------------------------------------*/
 	/*  Credit: Eike Send for the awesome swipe event */    
@@ -82,7 +82,7 @@
   $.fn.onepage_scroll = function(options){
     var settings = $.extend({}, defaults, options),
         el = $(this),
-        sections = $(settings.sectionContainer)
+        sections = $(settings.sectionContainer),
         total = sections.length,
         status = "off",
         topPos = 0,
@@ -90,6 +90,11 @@
         quietPeriod = 500,
         paginationList = "";
     
+
+    $.fn.setSectionActive = function(id) {
+      return this;
+    };
+
     $.fn.transformPage = function(settings, pos, index) {
       if (typeof settings.beforeMove == 'function') settings.beforeMove(index);
       $(this).css({
@@ -108,24 +113,28 @@
     }
     
     $.fn.moveDown = function() {
-      var el = $(this)
+      var el = $(this);
       index = $(settings.sectionContainer +".active").data("index");
       current = $(settings.sectionContainer + "[data-index='" + index + "']");
       next = $(settings.sectionContainer + "[data-index='" + (index + 1) + "']");
+
       if(next.length < 1) {
         if (settings.loop == true) {
           pos = 0;
           next = $(settings.sectionContainer + "[data-index='1']");
-        } else {
-          return
         }
-        
-      }else {
+        else {
+          return;
+        }
+      }
+      else {
         pos = (index * 100) * -1;
       }
+
       if (typeof settings.beforeMove == 'function') settings.beforeMove( next.data("index"));
       current.removeClass("active")
       next.addClass("active");
+
       if(settings.pagination == true) {
         $(".onepage-pagination li a" + "[data-index='" + index + "']").removeClass("active");
         $(".onepage-pagination li a" + "[data-index='" + next.data("index") + "']").addClass("active");
@@ -137,7 +146,8 @@
       if (history.replaceState && settings.updateURL == true) {
         var href = window.location.href.substr(0,window.location.href.indexOf('#')) + "#" + (index + 1);
         history.pushState( {}, document.title, href );
-      }   
+      }
+
       el.transformPage(settings, pos, next.data("index"));
     }
     
@@ -153,12 +163,13 @@
           next = $(settings.sectionContainer + "[data-index='"+total+"']");
         }
         else {
-          return
+          return;
         }
-      }else {
+      }
+      else {
         pos = ((next.data("index") - 1) * 100) * -1;
       }
-      if (typeof settings.beforeMove == 'function') settings.beforeMove(next.data("index"));
+      if (typeof settings.beforeMove === 'function') settings.beforeMove(next.data("index"));
       current.removeClass("active")
       next.addClass("active")
       if(settings.pagination == true) {
@@ -179,7 +190,9 @@
       current = $(settings.sectionContainer + ".active")
       next = $(settings.sectionContainer + "[data-index='" + (page_index) + "']");
       if(next.length > 0) {
-        if (typeof settings.beforeMove == 'function') settings.beforeMove(next.data("index"));
+        if (typeof settings.beforeMove === 'function')
+          settings.beforeMove(next.data("index"));
+
         current.removeClass("active")
         next.addClass("active")
         $(".onepage-pagination li a" + ".active").removeClass("active");
@@ -197,6 +210,12 @@
       }
     }
     
+    // Listen for hashchange event, and move to the correct page when triggered.
+
+    $(window).on("hashchange", function() {
+      el.moveTo(document.location.hash.replace(/\#/, ""));
+    });
+
     function responsive() {
       if ($(window).width() < settings.responsiveFallback) {
         $("body").addClass("disabled-onepage-scroll");
@@ -243,17 +262,22 @@
         lastAnimation = timeNow;
     }
     
-    // Prepare everything before binding wheel scroll
+    /**
+    * Go through all section elements and apply
+    * the correct absolute positioning to them.
+    * Add the data-index attribute to them.
+    */
     
     el.addClass("onepage-wrapper").css("position","relative");
     $.each( sections, function(i) {
+      var index = i + 1;
       $(this).css({
         position: "absolute",
         top: topPos + "%"
-      }).addClass("section").attr("data-index", i+1);
+      }).addClass("section").attr("data-index", index);
       topPos = topPos + 100;
       if(settings.pagination == true) {
-        paginationList += "<li><a data-index='"+(i+1)+"' href='#" + (i+1) + "'></a></li>"
+        paginationList += "<li><a data-index='"+(index)+"' href='#" + (index) + "'></a></li>"
       }
     });
     
@@ -265,39 +289,55 @@
       el.moveDown(); 
     });
     
-    // Create Pagination and Display Them
-    if(settings.pagination == true) {
-      $("<ul class='onepage-pagination'>" + paginationList + "</ul>").prependTo("body");
+    // Create the pagination element on the right.
+
+    if(settings.pagination === true) {
+      $("<ul class='onepage-pagination'>" + paginationList + "</ul>")
+      .prependTo("body");
+
       posTop = (el.find(".onepage-pagination").height() / 2) * -1;
       el.find(".onepage-pagination").css("margin-top", posTop);
     }
+
+    // Handler for already-set hash URLs.
     
-    if(window.location.hash != "" && window.location.hash != "#1") {
-      init_index =  window.location.hash.replace("#", "")
-      $(settings.sectionContainer + "[data-index='" + init_index + "']").addClass("active")
-      $("body").addClass("viewing-page-"+ init_index)
-      if(settings.pagination == true) $(".onepage-pagination li a" + "[data-index='" + init_index + "']").addClass("active");
-      
-      next = $(settings.sectionContainer + "[data-index='" + (init_index) + "']");
+    if(window.location.hash !== "" && window.location.hash != "#1") {
+      var init_index =  window.location.hash.replace("#", "");
+
+      $(settings.sectionContainer + "[data-index='" + init_index + "']").addClass("active");
+      $("body").addClass("viewing-page-"+ init_index);
+      if(settings.pagination === true)
+        $(".onepage-pagination li a" + "[data-index='" + init_index + "']").addClass("active");
+
+      next = $(settings.sectionContainer + "[data-index='" + init_index + "']");
+
       if(next) {
-        next.addClass("active")
-        if(settings.pagination == true) $(".onepage-pagination li a" + "[data-index='" + (init_index) + "']").addClass("active");
-        $("body")[0].className = $("body")[0].className.replace(/\bviewing-page-\d.*?\b/g, '');
-        $("body").addClass("viewing-page-"+next.data("index"))
-        if (history.replaceState && settings.updateURL == true) {
+        next.addClass("active");
+        if(settings.pagination === true)
+          $(".onepage-pagination li a" + "[data-index='" + (init_index) + "']").addClass("active");
+        $("body")[0].className =
+        $("body")[0]
+        .className.replace(/\bviewing-page-\d.*?\b/g, '');
+
+        $("body")
+        .addClass("viewing-page-"+next
+        .data("index"));
+
+        if (history.replaceState && settings.updateURL === true) {
           var href = window.location.href.substr(0,window.location.href.indexOf('#')) + "#" + (init_index);
-          history.pushState( {}, document.title, href );
+          history.pushState( {}, document.title, href);
         }
       }
       pos = ((init_index - 1) * 100) * -1;
-      el.transformPage(settings, pos, init_index);
       
-    }else{
+      el.transformPage(settings, pos, init_index);
+    }
+    else {
       $(settings.sectionContainer + "[data-index='1']").addClass("active")
       $("body").addClass("viewing-page-1")
       if(settings.pagination == true) $(".onepage-pagination li a" + "[data-index='1']").addClass("active");
     }
-    if(settings.pagination == true)  {
+    if(settings.pagination == true) {
       $(".onepage-pagination li a").click(function (){
         var page_index = $(this).data("index");
         el.moveTo(page_index);
