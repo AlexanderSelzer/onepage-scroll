@@ -214,16 +214,17 @@
     $.fn.moveTo = function(page_index) {
       current = $(settings.sectionContainer + ".active")
       next = $(settings.sectionContainer + "[data-index='" + (page_index) + "']");
+      
       if(next.length > 0) {
         if (typeof settings.beforeMove === 'function')
           settings.beforeMove(next.data("index"));
 
-        current.removeClass("active")
-        next.addClass("active")
+        current.removeClass("active");
+        next.addClass("active");
         $(".onepage-pagination li a" + ".active").removeClass("active");
         $(".onepage-pagination li a" + "[data-index='" + (page_index) + "']").addClass("active");
         $("body")[0].className = $("body")[0].className.replace(/\bviewing-page-\d.*?\b/g, '');
-        $("body").addClass("viewing-page-"+next.data("index"))
+        $("body").addClass("viewing-page-"+next.data("index"));
         
         pos = ((page_index - 1) * 100) * -1;
         
